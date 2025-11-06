@@ -7,20 +7,22 @@ import spinal.lib._
  * PWM测量模块IO定义
  * 用于测量外部PWM信号的on和off时间
  */
-case class PWMIO(pwmWidth: Int = 32) extends Bundle with IMasterSlave {
+case class PWMIO(pwmWidth: Int ) extends Bundle with IMasterSlave {
   // 输入PWM信号
   val pwm = in Bool()
-  
+
   // 输出测量结果
-  val on= out UInt(pwmWidth bits)       // 频率 (Hz)
-  val off = out UInt(pwmWidth bits)
-  val no_pwm = out Bool()
+  val param=new param(pwmWidth)
   override def asMaster(): Unit = {
     in(pwm)
-    out(on, off,no_pwm)
+    out(param.on, param.off,param.no_pwm)
   }
 }
-
+case class param(pwmWidth: Int) extends Bundle{
+  val on=  UInt(pwmWidth bits)       // 频率 (Hz)
+  val off = UInt(pwmWidth bits)
+  val no_pwm =  Bool()
+}
 /**
  * PWM测量模块
  * 测量输入PWM信号的频率和占空比
@@ -56,17 +58,22 @@ when(io.pwm) {
 
 when (highMAX<period|| lowMAX<period)
 { 
-  io.on := highMAX
-  io.off := lowMAX
-  io.no_pwm := False
+  io.param.on := highMAX
+  io.param.off := lowMAX
+  io.param.no_pwm := False
 
 } otherwise {
-    io.on := 0
-    io.off := 0
-    io.no_pwm := True
+    io.param.on := 0
+    io.param.off := 0
+    io.param.no_pwm := True
 }
 }
 object PWMMeasure extends App {
   import Config.Config
   Config.spinal.generateVerilog(PWMMeasure(32, 1000))
+  def apply (pwmWidth:Int,period:Int,port:param,pwm:Bool): Unit = {
+    val PWMMeasure_inst=new PWMMeasure(pwmWidth,period)
+    PWMMeasure_inst.io.param<>port
+    PWMMeasure_inst.io.pwm<>pwm
+  }
 }
