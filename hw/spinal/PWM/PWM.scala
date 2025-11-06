@@ -41,23 +41,29 @@ case class PWM() extends Component{
   val io =new Bundle{
     val pwm_in=in(Bool())
     val pwm_out=out(Bool())
-    val sel=Bits(4 bits)
+    val sel=in Bits(4 bits)
   }
   
   val PWMIN=new param(32)
   val PWMOUT=new param(32)
+  when(PWMIN.no_pwm){
+    PWMOUT.no_pwm:= True
+  }otherwise(
+    PWMOUT.no_pwm:=False
+  )
+
   PWMOUT.on:=io.sel.mux(
     1->PWMIN.on/5,
     4->PWMIN.on/10,
     8->PWMIN.on/20,
-    16->PWMIN.on/50,
+    15->PWMIN.on/50,
     default ->PWMIN.on
   )
   PWMOUT.off:=io.sel.mux(
     1->PWMIN.off/5,
     4->PWMIN.off/10,
     8->PWMIN.off/20,
-    16->PWMIN.off/50,
+    15->PWMIN.off/50,
     default ->PWMIN.off
   )
   PWMGenerate(32,PWMOUT,  io.pwm_out  )
